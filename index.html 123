@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>منصة التعلم الذكية | دروسي - مكتبتك الرقمية المتكاملة</title>
+    <meta name="description" content="منصة تعليمية متكاملة: كتب رسمية، تلخيصات، فيديوهات، وأدوات تنظيم المذاكرة مثل مؤتمر بومودورو وقائمة المهام. واجهة عصرية مع دعم الوضع الليلي.">
+    <meta name="keywords" content="تعليم, كتب PDF, تلخيصات, فيديوهات تعليمية, بومودورو, إدارة المذاكرة, مواد دراسية">
+    <meta name="author" content="Droosy Platform">
+    <meta name="robots" content="index, follow">
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="دروسي - منصة التعلم الذكية">
+    <meta property="og:description" content="مكتبة رقمية متكاملة وأدوات مذاكرة متطورة للطلاب.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630?text=Droosy">
+    <!-- Tailwind CSS + Fonts + Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Tailwind Config Override -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'cairo': ['Cairo', 'sans-serif'],
+                        'inter': ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDKs (initialized with mock config for demo - replace with your own) -->
+    <script type="module">
+        // Import Firebase modules (using compat for simplicity)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        
+        // Firebase configuration (REPLACE WITH YOUR OWN CREDENTIALS)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase (only if valid keys provided, otherwise mock)
+        let db, storage;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            storage = getStorage(app);
+            console.log("✅ Firebase initialized (real mode)");
+            window.firebaseReady = true;
+        } catch (e) {
+            console.warn("⚠️ Firebase not configured, using local mock data. Add your firebaseConfig to enable cloud features.");
+            window.firebaseReady = false;
+        }
+        window.db = db;
+        window.storage = storage;
+    </script>
+    <style>
+        /* Custom scrollbar & transitions */
+        body {
+            transition: background-color 0.3s, color 0.2s;
+        }
+        .sidebar-transition {
+            transition: transform 0.2s ease;
+        }
+        @media (max-width: 768px) {
+            .sidebar-mobile {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 50;
+            }
+            .sidebar-mobile.open {
+                transform: translateX(0);
+            }
+        }
+        .progress-bar {
+            transition: width 0.25s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="font-cairo bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <!-- Main App Wrapper -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar (Responsive) -->
+        <aside id="sidebar" class="sidebar-mobile md:relative md:translate-x-0 w-72 bg-white dark:bg-gray-800 shadow-xl border-l border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-y-auto z-40 transition-all duration-300">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h1 class="text-2xl font-extrabold bg-gradient-to-l from-blue-600 to-indigo-600 bg-clip-text text-transparent">📘 دروسي</h1>
+                <button id="closeSidebarMobile" class="md:hidden text-gray-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <nav class="flex-1 py-6">
+                <ul class="space-y-2 px-4">
+                    <li><a href="#" data-page="dashboard" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-tachometer-alt w-5"></i> <span>الرئيسية</span></a></li>
+                    <li><a href="#" data-page="subjects" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-book-open w-5"></i> <span>المواد الدراسية</span></a></li>
+                    <li><a href="#" data-page="library" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-database w-5"></i> <span>المكتبة الرقمية</span></a></li>
+                    <li><a href="#" data-page="tools" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-hourglass-half w-5"></i> <span>أدوات الطالب</span></a></li>
+                    <li><a href="#" data-page="contact" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-headset w-5"></i> <span>اتصل بنا</span></a></li>
+                </ul>
+                <!-- Ad Space Sidebar -->
+                <div class="mt-8 px-4">
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center text-xs text-gray-500 dark:text-gray-400 border border-dashed border-gray-300">
+                        <i class="fas fa-ad"></i> مساحة إعلانية (AdSense)
+                        <div class="mt-1 h-20 bg-white/50 dark:bg-gray-600 rounded flex items-center justify-center">Your Ad</div>
+                    </div>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <button id="darkModeToggle" class="flex w-full items-center justify-between p-2 rounded-lg bg-gray-100 dark:bg-gray-700"><span><i class="fas fa-moon"></i> الوضع الليلي</span> <i class="fas fa-toggle-on text-xl"></i></button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Header with Search & Ad -->
+            <div class="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm p-4 flex flex-col md:flex-row gap-3 items-center justify-between border-b border-gray-200 dark:border-gray-700">
+                <div class="relative w-full md:w-96">
+                    <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="globalSearch" placeholder="ابحث عن مذكرة، درس، أو مادة..." class="w-full pr-10 pl-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+                <!-- Top Ad Space -->
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-1 text-xs text-gray-500 w-full md:w-auto text-center border border-gray-200">
+                    <i class="fas fa-ad"></i> إعلانات الرأس - Google AdSense
+                </div>
+            </div>
+
+            <!-- Dynamic Pages Container -->
+            <div id="pageContent" class="p-5 md:p-6">
+                <!-- Dashboard (default) -->
+            </div>
+            
+            <!-- Bottom Ad Space (footer) -->
+            <div class="mt-8 p-3 text-center border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-xs text-gray-400">مساحة إعلانية سفلية - يفضل وضع AdSense هنا</div>
+                <div class="h-16 flex items-center justify-center">📢 إعلان</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ---------- GLOBAL DATA ----------
+        const subjectsData = [
+            { id: 1, name: "الرياضيات", icon: "fas fa-calculator", color: "bg-blue-100 text-blue-700", filesCount: 24 },
+            { id: 2, name: "الفيزياء", icon: "fas fa-atom", color: "bg-purple-100 text-purple-700", filesCount: 18 },
+            { id: 3, name: "اللغة العربية", icon: "fas fa-book", color: "bg-green-100 text-green-700", filesCount: 32 },
+            { id: 4, name: "الكيمياء", icon: "fas fa-flask", color: "bg-orange-100 text-orange-700", filesCount: 15 },
+            { id: 5, name: "التاريخ", icon: "fas fa-landmark", color: "bg-red-100 text-red-700", filesCount: 12 },
+            { id: 6, name: "الإنجليزية", icon: "fas fa-language", color: "bg-indigo-100 text-indigo-700", filesCount: 20 }
+        ];
+
+        let libraryFiles = [
+            { id: 1, name: "ملخص رياضيات الترم الأول.pdf", type: "PDF", size: "2.4 MB", date: "2025-01-10", term: "1", subject: "الرياضيات", url: "#", preview: "#" },
+            { id: 2, name: "الفيزياء - القوى والحركة.mp4", type: "Video", size: "45 MB", date: "2025-01-05", term: "2", subject: "الفيزياء", url: "#", preview: "#" },
+            { id: 3, name: "قواعد النحو الشامل.pdf", type: "PDF", size: "1.8 MB", date: "2024-12-20", term: "1", subject: "اللغة العربية", url: "#", preview: "#" },
+            { id: 4, name: "الكيمياء العضوية - شرح.mp4", type: "Video", size: "120 MB", date: "2025-01-12", term: "2", subject: "الكيمياء", url: "#", preview: "#" },
+            { id: 5, name: "خريطة مصر القديمة.pdf", type: "PDF", size: "3.1 MB", date: "2024-12-28", term: "1", subject: "التاريخ", url: "#", preview: "#" },
+            { id: 6, name: "English Grammar Tenses.pdf", type: "PDF", size: "0.9 MB", date: "2025-01-02", term: "2", subject: "الإنجليزية", url: "#", preview: "#" },
+            { id: 7, name: "مسائل الرياضيات التطبيقية.pdf", type: "PDF", size: "5 MB", date: "2025-01-07", term: "1", subject: "الرياضيات", url: "#", preview: "#" },
+            { id: 8, name: "مراجعة ليلة الامتحان فيزياء.pdf", type: "PDF", size: "2.2 MB", date: "2025-01-15", term: "2", subject: "الفيزياء", url: "#", preview: "#" }
+        ];
+
+        // Local Storage for Tasks
+        let tasks = JSON.parse(localStorage.getItem("studyTasks")) || [
+            { id: 1, text: "مراجعة الفصل الأول رياضيات", completed: false },
+            { id: 2, text: "حل 10 مسائل فيزياء", completed: true },
+            { id: 3, text: "تلخيص درس النحو", completed: false }
+        ];
+        
+        // Pomodoro State
+        let pomodoroState = {
+            mode: "work", // work / break
+            timeLeft: 25 * 60, // seconds
+            timerId: null,
+            isRunning: false
+        };
+        const workDuration = 25 * 60;
+        const breakDuration = 5 * 60;
+
+        // Helper: Save tasks & update progress
+        function saveTasks() {
+            localStorage.setItem("studyTasks", JSON.stringify(tasks));
+            updateTasksUI();
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const percent = total === 0 ? 0 : (completed / total) * 100;
+            const progressFill = document.getElementById("progressFill");
+            const percentSpan = document.getElementById("progressPercent");
+            if (progressFill) progressFill.style.width = `${percent}%`;
+            if (percentSpan) percentSpan.innerText = `${Math.round(percent)}%`;
+        }
+
+        function updateTasksUI() {
+            const container = document.getElementById("tasksList");
+            if (!container) return;
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">لا توجد مهام، أضف مهمة جديدة</div>';
+            } else {
+                container.innerHTML = tasks.map(task => `
+                    <div class="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" ${task.completed ? "checked" : ""} data-id="${task.id}" class="task-checkbox w-5 h-5 rounded">
+                            <span class="${task.completed ? 'line-through text-gray-400' : ''}">${task.text}</span>
+                        </div>
+                        <button data-id="${task.id}" class="delete-task text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `).join('');
+            }
+            // attach events
+            document.querySelectorAll('.task-checkbox').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    const task = tasks.find(t => t.id === id);
+                    if (task) task.completed = e.target.checked;
+                    saveTasks();
+                });
+            });
+            document.querySelectorAll('.delete-task').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.dataset.id);
+                    tasks = tasks.filter(t => t.id !== id);
+                    saveTasks();
+                });
+            });
+            updateProgressBar();
+        }
+
+        function addTask(text) {
+            if (!text.trim()) return;
+            const newId = tasks.length ? Math.max(...tasks.map(t=>t.id)) + 1 : 1;
+            tasks.push({ id: newId, text: text.trim(), completed: false });
+            saveTasks();
+        }
+
+        // Pomodoro Timer UI
+        function renderTimerUI() {
+            const timerDisplay = document.getElementById("timerDisplay");
+            if (!timerDisplay) return;
+            const minutes = Math.floor(pomodoroState.timeLeft / 60);
+            const seconds = pomodoroState.timeLeft % 60;
+            timerDisplay.innerText = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+            const modeText = document.getElementById("timerModeText");
+            if (modeText) modeText.innerText = pomodoroState.mode === "work" ? "💪 وقت المذاكرة" : "☕ وقت الراحة";
+        }
+
+        function updateTimerUI() { renderTimerUI(); }
+
+        function startPomodoro() {
+            if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
+            pomodoroState.isRunning = true;
+            pomodoroState.timerId = setInterval(() => {
+                if (pomodoroState.timeLeft <= 1) {
+                    clearInterval(pomodoroState.timerId);
+                    pomodoroState.isRunning = false;
+                    // Play beep sound (simple web audio)
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    oscillator.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    oscillator.frequency.value = 880;
+                    gain.gain.value = 0.3;
+                    oscillator.start();
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1);
+                    oscillator.stop(audioCtx.currentTime + 0.8);
+                    // Switch mode
+                    if (pomodoroState.mode === "work") {
+                        pomodoroState.mode = "break";
+                        pomodoroState.timeLeft = breakDuration;
+                    } else {
+                        pomodoroState.mode = "work";
+                        pomodoroState.timeLeft = workDuration;
+                    }
+                    renderTimerUI();
+                    startPomodoro(); // auto restart next session
+                } else {
+                    pomodoroState.timeLeft--;
+                    renderTimerUI();
+                }
+            }, 1000);
+            renderTimerUI();
+        }
+
+        function stopPomodoro() {
+            if (pomodoroState.timerId) {
+                clearInterval(pomodoroState.timerId);
+                pomodoroState.timerId = null;
+            }
+            pomodoroState.isRunning = false;
+            renderTimerUI();
+        }
+
+        function resetPomodoro() {
+            stopPomodoro();
+            pomodoroState.mode = "work";
+            pomodoroState.timeLeft = workDuration;
+            renderTimerUI();
+        }
+
+        // ----- Dynamic Page Rendering -----
+        let currentTermFilter = "all"; // all, 1, 2
+
+        function renderDashboard() {
+            const recentFiles = [...libraryFiles].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,4);
+            return `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+                        <h2 class="text-3xl font-bold">مرحباً بك في منصة دروسي! 📚</h2>
+                        <p class="mt-2">منصتك المتكاملة للمذاكرة، المكتبة الرقمية وأدوات التركيز.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">📄 آخر الملفات المضافة</h3>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            ${recentFiles.map(file => `
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow border">
+                                    <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                                    <p class="font-medium truncate">${file.name}</p>
+                                    <p class="text-xs text-gray-400">${file.date}</p>
+                                    <div class="flex gap-2 mt-2"><button class="text-blue-500 text-sm previewBtn" data-file='${JSON.stringify(file)}'>معاينة</button><button class="text-green-500 text-sm">تحميل</button></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSubjectsGrid() {
+            return `
+                <div>
+                    <h2 class="text-2xl font-bold mb-5">📖 المواد الدراسية</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${subjectsData.map(sub => `
+                            <div class="card-hover cursor-pointer subject-card bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5 transition-all border border-gray-100 dark:border-gray-700" data-subject="${sub.name}">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 ${sub.color} rounded-2xl flex items-center justify-center text-2xl"><i class="${sub.icon}"></i></div>
+                                    <div><h3 class="font-bold text-xl">${sub.name}</h3><p class="text-sm text-gray-500">${sub.filesCount} ملف</p></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLibrary(termFilter = currentTermFilter) {
+            let filtered = [...libraryFiles];
+            if (termFilter !== "all") filtered = filtered.filter(f => f.term == termFilter);
+            return `
+                <div>
+                    <div class="flex justify-between items-center flex-wrap gap-3 mb-5">
+                        <h2 class="text-2xl font-bold">📂 المكتبة الرقمية</h2>
+                        <div class="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === 'all' ? 'bg-blue-500 text-white' : ''}" data-term="all">الكل</button>
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === '1' ? 'bg-blue-500 text-white' : ''}" data-term="1">الترم الأول</button>
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === '2' ? 'bg-blue-500 text-white' : ''}" data-term="2">الترم الثاني</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow">
+                        <table class="min-w-full text-right">
+                            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
+                                <tr><th class="p-3">اسم الملف</th><th>النوع</th><th>الحجم</th><th>التاريخ</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(file => `
+                                    <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="p-3 font-medium">${file.name}</td><td>${file.type}</td><td>${file.size}</td><td>${file.date}</td>
+                                        <td class="flex gap-2"><button class="previewBtn text-blue-500" data-file='${JSON.stringify(file)}'><i class="fas fa-eye"></i> معاينة</button>
+                                        <button class="text-green-500"><i class="fas fa-download"></i> تحميل</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTools() {
+            return `
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow">
+                        <h3 class="text-xl font-bold mb-3"><i class="fas fa-clock"></i> مؤقت بومودورو</h3>
+                        <div class="text-center"><div id="timerDisplay" class="text-5xl font-mono font-bold">25:00</div><div id="timerModeText" class="text-gray-500">💪 وقت المذاكرة</div></div>
+                        <div class="flex justify-center gap-3 mt-4"><button id="startTimerBtn" class="bg-green-500 px-4 py-2 rounded-lg text-white">ابدأ</button><button id="stopTimerBtn" class="bg-yellow-500 px-4 py-2 rounded-lg">إيقاف</button><button id="resetTimerBtn" class="bg-red-500 px-4 py-2 rounded-lg">إعادة</button></div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow">
+                        <h3 class="text-xl font-bold mb-3"><i class="fas fa-tasks"></i> قائمة المهام</h3>
+                        <div class="mb-3 flex gap-2"><input type="text" id="newTaskInput" placeholder="أضف مهمة جديدة..." class="flex-1 p-2 border rounded-lg"><button id="addTaskBtn" class="bg-blue-500 px-4 py-2 rounded-lg text-white">+</button></div>
+                        <div class="mb-2"><div class="w-full bg-gray-200 rounded-full h-2.5"><div id="progressFill" class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width:0%"></div></div><p id="progressPercent" class="text-xs mt-1">0%</p></div>
+                        <div id="tasksList" class="space-y-2 max-h-64 overflow-auto"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderContact() {
+            return `<div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow text-center"><i class="fas fa-envelope-open-text text-6xl text-blue-500 mb-4"></i><h2 class="text-2xl font-bold">تواصل معنا</h2><p>بريد إلكتروني: support@droosy.com | هاتف: 123456789</p><div class="mt-6"><iframe src="https://www.google.com/maps/embed?pb=!1m18" class="w-full h-64 rounded-xl" style="border:0;" allowfullscreen></iframe></div></div>`;
+        }
+
+        function renderCurrentPage(pageId) {
+            const container = document.getElementById("pageContent");
+            if (pageId === "dashboard") container.innerHTML = renderDashboard();
+            else if (pageId === "subjects") container.innerHTML = renderSubjectsGrid();
+            else if (pageId === "library") container.innerHTML = renderLibrary(currentTermFilter);
+            else if (pageId === "tools") container.innerHTML = renderTools();
+            else if (pageId === "contact") container.innerHTML = renderContact();
+            // Re-attach events
+            attachPageEvents();
+        }
+
+        function attachPageEvents() {
+            // preview modals
+            document.querySelectorAll(".previewBtn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const fileData = JSON.parse(btn.dataset.file);
+                    alert(`معاينة: ${fileData.name}\n(الرابط التجريبي: ${fileData.url || "#"})\nتم التكامل مع Firebase لتخزين حقيقي.`);
+                });
+            });
+            // term filters
+            document.querySelectorAll(".term-filter").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const term = btn.dataset.term;
+                    currentTermFilter = term;
+                    renderCurrentPage("library");
+                });
+            });
+            // subject cards navigation
+            document.querySelectorAll(".subject-card").forEach(card => {
+                card.addEventListener("click", () => { renderCurrentPage("library"); });
+            });
+            // pomodoro events
+            const startBtn = document.getElementById("startTimerBtn");
+            const stopBtn = document.getElementById("stopTimerBtn");
+            const resetBtn = document.getElementById("resetTimerBtn");
+            if (startBtn) startBtn.onclick = () => startPomodoro();
+            if (stopBtn) stopBtn.onclick = () => stopPomodoro();
+            if (resetBtn) resetBtn.onclick = () => resetPomodoro();
+            // tasks
+            const addBtn = document.getElementById("addTaskBtn");
+            const taskInput = document.getElementById("newTaskInput");
+            if (addBtn) addBtn.onclick = () => { addTask(taskInput.value); taskInput.value = ""; };
+            updateTasksUI();
+            renderTimerUI();
+        }
+
+        // Global Search
+        document.getElementById("globalSearch")?.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = libraryFiles.filter(f => f.name.toLowerCase().includes(query) || f.subject.toLowerCase().includes(query));
+            if (document.querySelector("#pageContent").innerHTML.includes("المكتبة الرقمية")) {
+                // If library page active, re-render with filter
+                const temp = currentTermFilter;
+                currentTermFilter = "all";
+                renderCurrentPage("library");
+                currentTermFilter = temp;
+                // manual filtering after render
+                setTimeout(() => {
+                    const rows = document.querySelectorAll("table tbody tr");
+                    rows.forEach((row, idx) => {
+                        const fileName = row.cells[0]?.innerText.toLowerCase();
+                        if (fileName && !fileName.includes(query)) row.style.display = "none";
+                        else row.style.display = "";
+                    });
+                }, 10);
+            } else {
+                alert(`نتائج البحث عن "${query}" : ${filtered.length} ملف. انتقل إلى المكتبة لرؤية التفاصيل.`);
+            }
+        });
+
+        // Sidebar & Dark Mode
+        let currentActive = "dashboard";
+        document.querySelectorAll(".nav-link").forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                currentActive = page;
+                renderCurrentPage(page);
+                if (window.innerWidth < 768) document.getElementById("sidebar").classList.remove("open");
+            });
+        });
+        document.getElementById("closeSidebarMobile")?.addEventListener("click", () => document.getElementById("sidebar").classList.remove("open"));
+        const menuToggle = document.createElement("button");
+        menuToggle.innerHTML = '<i class="fas fa-bars text-2xl"></i>';
+        menuToggle.className = "md:hidden fixed bottom-5 left-5 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg";
+        document.body.appendChild(menuToggle);
+        menuToggle.onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+        // Dark mode
+        const darkToggle = document.getElementById("darkModeToggle");
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        darkToggle?.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            localStorage.theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+        });
+        
+        // Initial render
+        renderCurrentPage("dashboard");
+    </script>
+</body>
+  </html><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>منصة التعلم الذكية | دروسي - مكتبتك الرقمية المتكاملة</title>
+    <meta name="description" content="منصة تعليمية متكاملة: كتب رسمية، تلخيصات، فيديوهات، وأدوات تنظيم المذاكرة مثل مؤتمر بومودورو وقائمة المهام. واجهة عصرية مع دعم الوضع الليلي.">
+    <meta name="keywords" content="تعليم, كتب PDF, تلخيصات, فيديوهات تعليمية, بومودورو, إدارة المذاكرة, مواد دراسية">
+    <meta name="author" content="Droosy Platform">
+    <meta name="robots" content="index, follow">
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="دروسي - منصة التعلم الذكية">
+    <meta property="og:description" content="مكتبة رقمية متكاملة وأدوات مذاكرة متطورة للطلاب.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630?text=Droosy">
+    <!-- Tailwind CSS + Fonts + Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Tailwind Config Override -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'cairo': ['Cairo', 'sans-serif'],
+                        'inter': ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDKs (initialized with mock config for demo - replace with your own) -->
+    <script type="module">
+        // Import Firebase modules (using compat for simplicity)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        
+        // Firebase configuration (REPLACE WITH YOUR OWN CREDENTIALS)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase (only if valid keys provided, otherwise mock)
+        let db, storage;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            storage = getStorage(app);
+            console.log("✅ Firebase initialized (real mode)");
+            window.firebaseReady = true;
+        } catch (e) {
+            console.warn("⚠️ Firebase not configured, using local mock data. Add your firebaseConfig to enable cloud features.");
+            window.firebaseReady = false;
+        }
+        window.db = db;
+        window.storage = storage;
+    </script>
+    <style>
+        /* Custom scrollbar & transitions */
+        body {
+            transition: background-color 0.3s, color 0.2s;
+        }
+        .sidebar-transition {
+            transition: transform 0.2s ease;
+        }
+        @media (max-width: 768px) {
+            .sidebar-mobile {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 50;
+            }
+            .sidebar-mobile.open {
+                transform: translateX(0);
+            }
+        }
+        .progress-bar {
+            transition: width 0.25s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="font-cairo bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <!-- Main App Wrapper -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar (Responsive) -->
+        <aside id="sidebar" class="sidebar-mobile md:relative md:translate-x-0 w-72 bg-white dark:bg-gray-800 shadow-xl border-l border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-y-auto z-40 transition-all duration-300">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h1 class="text-2xl font-extrabold bg-gradient-to-l from-blue-600 to-indigo-600 bg-clip-text text-transparent">📘 دروسي</h1>
+                <button id="closeSidebarMobile" class="md:hidden text-gray-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <nav class="flex-1 py-6">
+                <ul class="space-y-2 px-4">
+                    <li><a href="#" data-page="dashboard" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-tachometer-alt w-5"></i> <span>الرئيسية</span></a></li>
+                    <li><a href="#" data-page="subjects" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-book-open w-5"></i> <span>المواد الدراسية</span></a></li>
+                    <li><a href="#" data-page="library" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-database w-5"></i> <span>المكتبة الرقمية</span></a></li>
+                    <li><a href="#" data-page="tools" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-hourglass-half w-5"></i> <span>أدوات الطالب</span></a></li>
+                    <li><a href="#" data-page="contact" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-headset w-5"></i> <span>اتصل بنا</span></a></li>
+                </ul>
+                <!-- Ad Space Sidebar -->
+                <div class="mt-8 px-4">
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center text-xs text-gray-500 dark:text-gray-400 border border-dashed border-gray-300">
+                        <i class="fas fa-ad"></i> مساحة إعلانية (AdSense)
+                        <div class="mt-1 h-20 bg-white/50 dark:bg-gray-600 rounded flex items-center justify-center">Your Ad</div>
+                    </div>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <button id="darkModeToggle" class="flex w-full items-center justify-between p-2 rounded-lg bg-gray-100 dark:bg-gray-700"><span><i class="fas fa-moon"></i> الوضع الليلي</span> <i class="fas fa-toggle-on text-xl"></i></button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Header with Search & Ad -->
+            <div class="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm p-4 flex flex-col md:flex-row gap-3 items-center justify-between border-b border-gray-200 dark:border-gray-700">
+                <div class="relative w-full md:w-96">
+                    <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="globalSearch" placeholder="ابحث عن مذكرة، درس، أو مادة..." class="w-full pr-10 pl-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+                <!-- Top Ad Space -->
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-1 text-xs text-gray-500 w-full md:w-auto text-center border border-gray-200">
+                    <i class="fas fa-ad"></i> إعلانات الرأس - Google AdSense
+                </div>
+            </div>
+
+            <!-- Dynamic Pages Container -->
+            <div id="pageContent" class="p-5 md:p-6">
+                <!-- Dashboard (default) -->
+            </div>
+            
+            <!-- Bottom Ad Space (footer) -->
+            <div class="mt-8 p-3 text-center border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-xs text-gray-400">مساحة إعلانية سفلية - يفضل وضع AdSense هنا</div>
+                <div class="h-16 flex items-center justify-center">📢 إعلان</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ---------- GLOBAL DATA ----------
+        const subjectsData = [
+            { id: 1, name: "الرياضيات", icon: "fas fa-calculator", color: "bg-blue-100 text-blue-700", filesCount: 24 },
+            { id: 2, name: "الفيزياء", icon: "fas fa-atom", color: "bg-purple-100 text-purple-700", filesCount: 18 },
+            { id: 3, name: "اللغة العربية", icon: "fas fa-book", color: "bg-green-100 text-green-700", filesCount: 32 },
+            { id: 4, name: "الكيمياء", icon: "fas fa-flask", color: "bg-orange-100 text-orange-700", filesCount: 15 },
+            { id: 5, name: "التاريخ", icon: "fas fa-landmark", color: "bg-red-100 text-red-700", filesCount: 12 },
+            { id: 6, name: "الإنجليزية", icon: "fas fa-language", color: "bg-indigo-100 text-indigo-700", filesCount: 20 }
+        ];
+
+        let libraryFiles = [
+            { id: 1, name: "ملخص رياضيات الترم الأول.pdf", type: "PDF", size: "2.4 MB", date: "2025-01-10", term: "1", subject: "الرياضيات", url: "#", preview: "#" },
+            { id: 2, name: "الفيزياء - القوى والحركة.mp4", type: "Video", size: "45 MB", date: "2025-01-05", term: "2", subject: "الفيزياء", url: "#", preview: "#" },
+            { id: 3, name: "قواعد النحو الشامل.pdf", type: "PDF", size: "1.8 MB", date: "2024-12-20", term: "1", subject: "اللغة العربية", url: "#", preview: "#" },
+            { id: 4, name: "الكيمياء العضوية - شرح.mp4", type: "Video", size: "120 MB", date: "2025-01-12", term: "2", subject: "الكيمياء", url: "#", preview: "#" },
+            { id: 5, name: "خريطة مصر القديمة.pdf", type: "PDF", size: "3.1 MB", date: "2024-12-28", term: "1", subject: "التاريخ", url: "#", preview: "#" },
+            { id: 6, name: "English Grammar Tenses.pdf", type: "PDF", size: "0.9 MB", date: "2025-01-02", term: "2", subject: "الإنجليزية", url: "#", preview: "#" },
+            { id: 7, name: "مسائل الرياضيات التطبيقية.pdf", type: "PDF", size: "5 MB", date: "2025-01-07", term: "1", subject: "الرياضيات", url: "#", preview: "#" },
+            { id: 8, name: "مراجعة ليلة الامتحان فيزياء.pdf", type: "PDF", size: "2.2 MB", date: "2025-01-15", term: "2", subject: "الفيزياء", url: "#", preview: "#" }
+        ];
+
+        // Local Storage for Tasks
+        let tasks = JSON.parse(localStorage.getItem("studyTasks")) || [
+            { id: 1, text: "مراجعة الفصل الأول رياضيات", completed: false },
+            { id: 2, text: "حل 10 مسائل فيزياء", completed: true },
+            { id: 3, text: "تلخيص درس النحو", completed: false }
+        ];
+        
+        // Pomodoro State
+        let pomodoroState = {
+            mode: "work", // work / break
+            timeLeft: 25 * 60, // seconds
+            timerId: null,
+            isRunning: false
+        };
+        const workDuration = 25 * 60;
+        const breakDuration = 5 * 60;
+
+        // Helper: Save tasks & update progress
+        function saveTasks() {
+            localStorage.setItem("studyTasks", JSON.stringify(tasks));
+            updateTasksUI();
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const percent = total === 0 ? 0 : (completed / total) * 100;
+            const progressFill = document.getElementById("progressFill");
+            const percentSpan = document.getElementById("progressPercent");
+            if (progressFill) progressFill.style.width = `${percent}%`;
+            if (percentSpan) percentSpan.innerText = `${Math.round(percent)}%`;
+        }
+
+        function updateTasksUI() {
+            const container = document.getElementById("tasksList");
+            if (!container) return;
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">لا توجد مهام، أضف مهمة جديدة</div>';
+            } else {
+                container.innerHTML = tasks.map(task => `
+                    <div class="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" ${task.completed ? "checked" : ""} data-id="${task.id}" class="task-checkbox w-5 h-5 rounded">
+                            <span class="${task.completed ? 'line-through text-gray-400' : ''}">${task.text}</span>
+                        </div>
+                        <button data-id="${task.id}" class="delete-task text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `).join('');
+            }
+            // attach events
+            document.querySelectorAll('.task-checkbox').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    const task = tasks.find(t => t.id === id);
+                    if (task) task.completed = e.target.checked;
+                    saveTasks();
+                });
+            });
+            document.querySelectorAll('.delete-task').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.dataset.id);
+                    tasks = tasks.filter(t => t.id !== id);
+                    saveTasks();
+                });
+            });
+            updateProgressBar();
+        }
+
+        function addTask(text) {
+            if (!text.trim()) return;
+            const newId = tasks.length ? Math.max(...tasks.map(t=>t.id)) + 1 : 1;
+            tasks.push({ id: newId, text: text.trim(), completed: false });
+            saveTasks();
+        }
+
+        // Pomodoro Timer UI
+        function renderTimerUI() {
+            const timerDisplay = document.getElementById("timerDisplay");
+            if (!timerDisplay) return;
+            const minutes = Math.floor(pomodoroState.timeLeft / 60);
+            const seconds = pomodoroState.timeLeft % 60;
+            timerDisplay.innerText = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+            const modeText = document.getElementById("timerModeText");
+            if (modeText) modeText.innerText = pomodoroState.mode === "work" ? "💪 وقت المذاكرة" : "☕ وقت الراحة";
+        }
+
+        function updateTimerUI() { renderTimerUI(); }
+
+        function startPomodoro() {
+            if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
+            pomodoroState.isRunning = true;
+            pomodoroState.timerId = setInterval(() => {
+                if (pomodoroState.timeLeft <= 1) {
+                    clearInterval(pomodoroState.timerId);
+                    pomodoroState.isRunning = false;
+                    // Play beep sound (simple web audio)
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    oscillator.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    oscillator.frequency.value = 880;
+                    gain.gain.value = 0.3;
+                    oscillator.start();
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1);
+                    oscillator.stop(audioCtx.currentTime + 0.8);
+                    // Switch mode
+                    if (pomodoroState.mode === "work") {
+                        pomodoroState.mode = "break";
+                        pomodoroState.timeLeft = breakDuration;
+                    } else {
+                        pomodoroState.mode = "work";
+                        pomodoroState.timeLeft = workDuration;
+                    }
+                    renderTimerUI();
+                    startPomodoro(); // auto restart next session
+                } else {
+                    pomodoroState.timeLeft--;
+                    renderTimerUI();
+                }
+            }, 1000);
+            renderTimerUI();
+        }
+
+        function stopPomodoro() {
+            if (pomodoroState.timerId) {
+                clearInterval(pomodoroState.timerId);
+                pomodoroState.timerId = null;
+            }
+            pomodoroState.isRunning = false;
+            renderTimerUI();
+        }
+
+        function resetPomodoro() {
+            stopPomodoro();
+            pomodoroState.mode = "work";
+            pomodoroState.timeLeft = workDuration;
+            renderTimerUI();
+        }
+
+        // ----- Dynamic Page Rendering -----
+        let currentTermFilter = "all"; // all, 1, 2
+
+        function renderDashboard() {
+            const recentFiles = [...libraryFiles].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,4);
+            return `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+                        <h2 class="text-3xl font-bold">مرحباً بك في منصة دروسي! 📚</h2>
+                        <p class="mt-2">منصتك المتكاملة للمذاكرة، المكتبة الرقمية وأدوات التركيز.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">📄 آخر الملفات المضافة</h3>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            ${recentFiles.map(file => `
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow border">
+                                    <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                                    <p class="font-medium truncate">${file.name}</p>
+                                    <p class="text-xs text-gray-400">${file.date}</p>
+                                    <div class="flex gap-2 mt-2"><button class="text-blue-500 text-sm previewBtn" data-file='${JSON.stringify(file)}'>معاينة</button><button class="text-green-500 text-sm">تحميل</button></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSubjectsGrid() {
+            return `
+                <div>
+                    <h2 class="text-2xl font-bold mb-5">📖 المواد الدراسية</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${subjectsData.map(sub => `
+                            <div class="card-hover cursor-pointer subject-card bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5 transition-all border border-gray-100 dark:border-gray-700" data-subject="${sub.name}">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 ${sub.color} rounded-2xl flex items-center justify-center text-2xl"><i class="${sub.icon}"></i></div>
+                                    <div><h3 class="font-bold text-xl">${sub.name}</h3><p class="text-sm text-gray-500">${sub.filesCount} ملف</p></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLibrary(termFilter = currentTermFilter) {
+            let filtered = [...libraryFiles];
+            if (termFilter !== "all") filtered = filtered.filter(f => f.term == termFilter);
+            return `
+                <div>
+                    <div class="flex justify-between items-center flex-wrap gap-3 mb-5">
+                        <h2 class="text-2xl font-bold">📂 المكتبة الرقمية</h2>
+                        <div class="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === 'all' ? 'bg-blue-500 text-white' : ''}" data-term="all">الكل</button>
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === '1' ? 'bg-blue-500 text-white' : ''}" data-term="1">الترم الأول</button>
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === '2' ? 'bg-blue-500 text-white' : ''}" data-term="2">الترم الثاني</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow">
+                        <table class="min-w-full text-right">
+                            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
+                                <tr><th class="p-3">اسم الملف</th><th>النوع</th><th>الحجم</th><th>التاريخ</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(file => `
+                                    <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="p-3 font-medium">${file.name}</td><td>${file.type}</td><td>${file.size}</td><td>${file.date}</td>
+                                        <td class="flex gap-2"><button class="previewBtn text-blue-500" data-file='${JSON.stringify(file)}'><i class="fas fa-eye"></i> معاينة</button>
+                                        <button class="text-green-500"><i class="fas fa-download"></i> تحميل</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTools() {
+            return `
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow">
+                        <h3 class="text-xl font-bold mb-3"><i class="fas fa-clock"></i> مؤقت بومودورو</h3>
+                        <div class="text-center"><div id="timerDisplay" class="text-5xl font-mono font-bold">25:00</div><div id="timerModeText" class="text-gray-500">💪 وقت المذاكرة</div></div>
+                        <div class="flex justify-center gap-3 mt-4"><button id="startTimerBtn" class="bg-green-500 px-4 py-2 rounded-lg text-white">ابدأ</button><button id="stopTimerBtn" class="bg-yellow-500 px-4 py-2 rounded-lg">إيقاف</button><button id="resetTimerBtn" class="bg-red-500 px-4 py-2 rounded-lg">إعادة</button></div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow">
+                        <h3 class="text-xl font-bold mb-3"><i class="fas fa-tasks"></i> قائمة المهام</h3>
+                        <div class="mb-3 flex gap-2"><input type="text" id="newTaskInput" placeholder="أضف مهمة جديدة..." class="flex-1 p-2 border rounded-lg"><button id="addTaskBtn" class="bg-blue-500 px-4 py-2 rounded-lg text-white">+</button></div>
+                        <div class="mb-2"><div class="w-full bg-gray-200 rounded-full h-2.5"><div id="progressFill" class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width:0%"></div></div><p id="progressPercent" class="text-xs mt-1">0%</p></div>
+                        <div id="tasksList" class="space-y-2 max-h-64 overflow-auto"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderContact() {
+            return `<div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow text-center"><i class="fas fa-envelope-open-text text-6xl text-blue-500 mb-4"></i><h2 class="text-2xl font-bold">تواصل معنا</h2><p>بريد إلكتروني: support@droosy.com | هاتف: 123456789</p><div class="mt-6"><iframe src="https://www.google.com/maps/embed?pb=!1m18" class="w-full h-64 rounded-xl" style="border:0;" allowfullscreen></iframe></div></div>`;
+        }
+
+        function renderCurrentPage(pageId) {
+            const container = document.getElementById("pageContent");
+            if (pageId === "dashboard") container.innerHTML = renderDashboard();
+            else if (pageId === "subjects") container.innerHTML = renderSubjectsGrid();
+            else if (pageId === "library") container.innerHTML = renderLibrary(currentTermFilter);
+            else if (pageId === "tools") container.innerHTML = renderTools();
+            else if (pageId === "contact") container.innerHTML = renderContact();
+            // Re-attach events
+            attachPageEvents();
+        }
+
+        function attachPageEvents() {
+            // preview modals
+            document.querySelectorAll(".previewBtn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const fileData = JSON.parse(btn.dataset.file);
+                    alert(`معاينة: ${fileData.name}\n(الرابط التجريبي: ${fileData.url || "#"})\nتم التكامل مع Firebase لتخزين حقيقي.`);
+                });
+            });
+            // term filters
+            document.querySelectorAll(".term-filter").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const term = btn.dataset.term;
+                    currentTermFilter = term;
+                    renderCurrentPage("library");
+                });
+            });
+            // subject cards navigation
+            document.querySelectorAll(".subject-card").forEach(card => {
+                card.addEventListener("click", () => { renderCurrentPage("library"); });
+            });
+            // pomodoro events
+            const startBtn = document.getElementById("startTimerBtn");
+            const stopBtn = document.getElementById("stopTimerBtn");
+            const resetBtn = document.getElementById("resetTimerBtn");
+            if (startBtn) startBtn.onclick = () => startPomodoro();
+            if (stopBtn) stopBtn.onclick = () => stopPomodoro();
+            if (resetBtn) resetBtn.onclick = () => resetPomodoro();
+            // tasks
+            const addBtn = document.getElementById("addTaskBtn");
+            const taskInput = document.getElementById("newTaskInput");
+            if (addBtn) addBtn.onclick = () => { addTask(taskInput.value); taskInput.value = ""; };
+            updateTasksUI();
+            renderTimerUI();
+        }
+
+        // Global Search
+        document.getElementById("globalSearch")?.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = libraryFiles.filter(f => f.name.toLowerCase().includes(query) || f.subject.toLowerCase().includes(query));
+            if (document.querySelector("#pageContent").innerHTML.includes("المكتبة الرقمية")) {
+                // If library page active, re-render with filter
+                const temp = currentTermFilter;
+                currentTermFilter = "all";
+                renderCurrentPage("library");
+                currentTermFilter = temp;
+                // manual filtering after render
+                setTimeout(() => {
+                    const rows = document.querySelectorAll("table tbody tr");
+                    rows.forEach((row, idx) => {
+                        const fileName = row.cells[0]?.innerText.toLowerCase();
+                        if (fileName && !fileName.includes(query)) row.style.display = "none";
+                        else row.style.display = "";
+                    });
+                }, 10);
+            } else {
+                alert(`نتائج البحث عن "${query}" : ${filtered.length} ملف. انتقل إلى المكتبة لرؤية التفاصيل.`);
+            }
+        });
+
+        // Sidebar & Dark Mode
+        let currentActive = "dashboard";
+        document.querySelectorAll(".nav-link").forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                currentActive = page;
+                renderCurrentPage(page);
+                if (window.innerWidth < 768) document.getElementById("sidebar").classList.remove("open");
+            });
+        });
+        document.getElementById("closeSidebarMobile")?.addEventListener("click", () => document.getElementById("sidebar").classList.remove("open"));
+        const menuToggle = document.createElement("button");
+        menuToggle.innerHTML = '<i class="fas fa-bars text-2xl"></i>';
+        menuToggle.className = "md:hidden fixed bottom-5 left-5 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg";
+        document.body.appendChild(menuToggle);
+        menuToggle.onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+        // Dark mode
+        const darkToggle = document.getElementById("darkModeToggle");
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        darkToggle?.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            localStorage.theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+        });
+        
+        // Initial render
+        renderCurrentPage("dashboard");
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>منصة التعلم الذكية | دروسي - مكتبتك الرقمية المتكاملة</title>
+    <meta name="description" content="منصة تعليمية متكاملة: كتب رسمية، تلخيصات، فيديوهات، وأدوات تنظيم المذاكرة مثل مؤتمر بومودورو وقائمة المهام. واجهة عصرية مع دعم الوضع الليلي.">
+    <meta name="keywords" content="تعليم, كتب PDF, تلخيصات, فيديوهات تعليمية, بومودورو, إدارة المذاكرة, مواد دراسية">
+    <meta name="author" content="Droosy Platform">
+    <meta name="robots" content="index, follow">
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="دروسي - منصة التعلم الذكية">
+    <meta property="og:description" content="مكتبة رقمية متكاملة وأدوات مذاكرة متطورة للطلاب.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630?text=Droosy">
+    <!-- Tailwind CSS + Fonts + Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Tailwind Config Override -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'cairo': ['Cairo', 'sans-serif'],
+                        'inter': ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase SDKs (initialized with mock config for demo - replace with your own) -->
+    <script type="module">
+        // Import Firebase modules (using compat for simplicity)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        
+        // Firebase configuration (REPLACE WITH YOUR OWN CREDENTIALS)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase (only if valid keys provided, otherwise mock)
+        let db, storage;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            storage = getStorage(app);
+            console.log("✅ Firebase initialized (real mode)");
+            window.firebaseReady = true;
+        } catch (e) {
+            console.warn("⚠️ Firebase not configured, using local mock data. Add your firebaseConfig to enable cloud features.");
+            window.firebaseReady = false;
+        }
+        window.db = db;
+        window.storage = storage;
+    </script>
+    <style>
+        /* Custom scrollbar & transitions */
+        body {
+            transition: background-color 0.3s, color 0.2s;
+        }
+        .sidebar-transition {
+            transition: transform 0.2s ease;
+        }
+        @media (max-width: 768px) {
+            .sidebar-mobile {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 50;
+            }
+            .sidebar-mobile.open {
+                transform: translateX(0);
+            }
+        }
+        .progress-bar {
+            transition: width 0.25s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="font-cairo bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <!-- Main App Wrapper -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar (Responsive) -->
+        <aside id="sidebar" class="sidebar-mobile md:relative md:translate-x-0 w-72 bg-white dark:bg-gray-800 shadow-xl border-l border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-y-auto z-40 transition-all duration-300">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h1 class="text-2xl font-extrabold bg-gradient-to-l from-blue-600 to-indigo-600 bg-clip-text text-transparent">📘 دروسي</h1>
+                <button id="closeSidebarMobile" class="md:hidden text-gray-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <nav class="flex-1 py-6">
+                <ul class="space-y-2 px-4">
+                    <li><a href="#" data-page="dashboard" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-tachometer-alt w-5"></i> <span>الرئيسية</span></a></li>
+                    <li><a href="#" data-page="subjects" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-book-open w-5"></i> <span>المواد الدراسية</span></a></li>
+                    <li><a href="#" data-page="library" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-database w-5"></i> <span>المكتبة الرقمية</span></a></li>
+                    <li><a href="#" data-page="tools" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-hourglass-half w-5"></i> <span>أدوات الطالب</span></a></li>
+                    <li><a href="#" data-page="contact" class="nav-link flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition"><i class="fas fa-headset w-5"></i> <span>اتصل بنا</span></a></li>
+                </ul>
+                <!-- Ad Space Sidebar -->
+                <div class="mt-8 px-4">
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center text-xs text-gray-500 dark:text-gray-400 border border-dashed border-gray-300">
+                        <i class="fas fa-ad"></i> مساحة إعلانية (AdSense)
+                        <div class="mt-1 h-20 bg-white/50 dark:bg-gray-600 rounded flex items-center justify-center">Your Ad</div>
+                    </div>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <button id="darkModeToggle" class="flex w-full items-center justify-between p-2 rounded-lg bg-gray-100 dark:bg-gray-700"><span><i class="fas fa-moon"></i> الوضع الليلي</span> <i class="fas fa-toggle-on text-xl"></i></button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Header with Search & Ad -->
+            <div class="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm p-4 flex flex-col md:flex-row gap-3 items-center justify-between border-b border-gray-200 dark:border-gray-700">
+                <div class="relative w-full md:w-96">
+                    <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="globalSearch" placeholder="ابحث عن مذكرة، درس، أو مادة..." class="w-full pr-10 pl-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+                <!-- Top Ad Space -->
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-1 text-xs text-gray-500 w-full md:w-auto text-center border border-gray-200">
+                    <i class="fas fa-ad"></i> إعلانات الرأس - Google AdSense
+                </div>
+            </div>
+
+            <!-- Dynamic Pages Container -->
+            <div id="pageContent" class="p-5 md:p-6">
+                <!-- Dashboard (default) -->
+            </div>
+            
+            <!-- Bottom Ad Space (footer) -->
+            <div class="mt-8 p-3 text-center border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-xs text-gray-400">مساحة إعلانية سفلية - يفضل وضع AdSense هنا</div>
+                <div class="h-16 flex items-center justify-center">📢 إعلان</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ---------- GLOBAL DATA ----------
+        const subjectsData = [
+            { id: 1, name: "الرياضيات", icon: "fas fa-calculator", color: "bg-blue-100 text-blue-700", filesCount: 24 },
+            { id: 2, name: "الفيزياء", icon: "fas fa-atom", color: "bg-purple-100 text-purple-700", filesCount: 18 },
+            { id: 3, name: "اللغة العربية", icon: "fas fa-book", color: "bg-green-100 text-green-700", filesCount: 32 },
+            { id: 4, name: "الكيمياء", icon: "fas fa-flask", color: "bg-orange-100 text-orange-700", filesCount: 15 },
+            { id: 5, name: "التاريخ", icon: "fas fa-landmark", color: "bg-red-100 text-red-700", filesCount: 12 },
+            { id: 6, name: "الإنجليزية", icon: "fas fa-language", color: "bg-indigo-100 text-indigo-700", filesCount: 20 }
+        ];
+
+        let libraryFiles = [
+            { id: 1, name: "ملخص رياضيات الترم الأول.pdf", type: "PDF", size: "2.4 MB", date: "2025-01-10", term: "1", subject: "الرياضيات", url: "#", preview: "#" },
+            { id: 2, name: "الفيزياء - القوى والحركة.mp4", type: "Video", size: "45 MB", date: "2025-01-05", term: "2", subject: "الفيزياء", url: "#", preview: "#" },
+            { id: 3, name: "قواعد النحو الشامل.pdf", type: "PDF", size: "1.8 MB", date: "2024-12-20", term: "1", subject: "اللغة العربية", url: "#", preview: "#" },
+            { id: 4, name: "الكيمياء العضوية - شرح.mp4", type: "Video", size: "120 MB", date: "2025-01-12", term: "2", subject: "الكيمياء", url: "#", preview: "#" },
+            { id: 5, name: "خريطة مصر القديمة.pdf", type: "PDF", size: "3.1 MB", date: "2024-12-28", term: "1", subject: "التاريخ", url: "#", preview: "#" },
+            { id: 6, name: "English Grammar Tenses.pdf", type: "PDF", size: "0.9 MB", date: "2025-01-02", term: "2", subject: "الإنجليزية", url: "#", preview: "#" },
+            { id: 7, name: "مسائل الرياضيات التطبيقية.pdf", type: "PDF", size: "5 MB", date: "2025-01-07", term: "1", subject: "الرياضيات", url: "#", preview: "#" },
+            { id: 8, name: "مراجعة ليلة الامتحان فيزياء.pdf", type: "PDF", size: "2.2 MB", date: "2025-01-15", term: "2", subject: "الفيزياء", url: "#", preview: "#" }
+        ];
+
+        // Local Storage for Tasks
+        let tasks = JSON.parse(localStorage.getItem("studyTasks")) || [
+            { id: 1, text: "مراجعة الفصل الأول رياضيات", completed: false },
+            { id: 2, text: "حل 10 مسائل فيزياء", completed: true },
+            { id: 3, text: "تلخيص درس النحو", completed: false }
+        ];
+        
+        // Pomodoro State
+        let pomodoroState = {
+            mode: "work", // work / break
+            timeLeft: 25 * 60, // seconds
+            timerId: null,
+            isRunning: false
+        };
+        const workDuration = 25 * 60;
+        const breakDuration = 5 * 60;
+
+        // Helper: Save tasks & update progress
+        function saveTasks() {
+            localStorage.setItem("studyTasks", JSON.stringify(tasks));
+            updateTasksUI();
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const percent = total === 0 ? 0 : (completed / total) * 100;
+            const progressFill = document.getElementById("progressFill");
+            const percentSpan = document.getElementById("progressPercent");
+            if (progressFill) progressFill.style.width = `${percent}%`;
+            if (percentSpan) percentSpan.innerText = `${Math.round(percent)}%`;
+        }
+
+        function updateTasksUI() {
+            const container = document.getElementById("tasksList");
+            if (!container) return;
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">لا توجد مهام، أضف مهمة جديدة</div>';
+            } else {
+                container.innerHTML = tasks.map(task => `
+                    <div class="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" ${task.completed ? "checked" : ""} data-id="${task.id}" class="task-checkbox w-5 h-5 rounded">
+                            <span class="${task.completed ? 'line-through text-gray-400' : ''}">${task.text}</span>
+                        </div>
+                        <button data-id="${task.id}" class="delete-task text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `).join('');
+            }
+            // attach events
+            document.querySelectorAll('.task-checkbox').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    const task = tasks.find(t => t.id === id);
+                    if (task) task.completed = e.target.checked;
+                    saveTasks();
+                });
+            });
+            document.querySelectorAll('.delete-task').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.dataset.id);
+                    tasks = tasks.filter(t => t.id !== id);
+                    saveTasks();
+                });
+            });
+            updateProgressBar();
+        }
+
+        function addTask(text) {
+            if (!text.trim()) return;
+            const newId = tasks.length ? Math.max(...tasks.map(t=>t.id)) + 1 : 1;
+            tasks.push({ id: newId, text: text.trim(), completed: false });
+            saveTasks();
+        }
+
+        // Pomodoro Timer UI
+        function renderTimerUI() {
+            const timerDisplay = document.getElementById("timerDisplay");
+            if (!timerDisplay) return;
+            const minutes = Math.floor(pomodoroState.timeLeft / 60);
+            const seconds = pomodoroState.timeLeft % 60;
+            timerDisplay.innerText = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+            const modeText = document.getElementById("timerModeText");
+            if (modeText) modeText.innerText = pomodoroState.mode === "work" ? "💪 وقت المذاكرة" : "☕ وقت الراحة";
+        }
+
+        function updateTimerUI() { renderTimerUI(); }
+
+        function startPomodoro() {
+            if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
+            pomodoroState.isRunning = true;
+            pomodoroState.timerId = setInterval(() => {
+                if (pomodoroState.timeLeft <= 1) {
+                    clearInterval(pomodoroState.timerId);
+                    pomodoroState.isRunning = false;
+                    // Play beep sound (simple web audio)
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    oscillator.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    oscillator.frequency.value = 880;
+                    gain.gain.value = 0.3;
+                    oscillator.start();
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1);
+                    oscillator.stop(audioCtx.currentTime + 0.8);
+                    // Switch mode
+                    if (pomodoroState.mode === "work") {
+                        pomodoroState.mode = "break";
+                        pomodoroState.timeLeft = breakDuration;
+                    } else {
+                        pomodoroState.mode = "work";
+                        pomodoroState.timeLeft = workDuration;
+                    }
+                    renderTimerUI();
+                    startPomodoro(); // auto restart next session
+                } else {
+                    pomodoroState.timeLeft--;
+                    renderTimerUI();
+                }
+            }, 1000);
+            renderTimerUI();
+        }
+
+        function stopPomodoro() {
+            if (pomodoroState.timerId) {
+                clearInterval(pomodoroState.timerId);
+                pomodoroState.timerId = null;
+            }
+            pomodoroState.isRunning = false;
+            renderTimerUI();
+        }
+
+        function resetPomodoro() {
+            stopPomodoro();
+            pomodoroState.mode = "work";
+            pomodoroState.timeLeft = workDuration;
+            renderTimerUI();
+        }
+
+        // ----- Dynamic Page Rendering -----
+        let currentTermFilter = "all"; // all, 1, 2
+
+        function renderDashboard() {
+            const recentFiles = [...libraryFiles].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,4);
+            return `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+                        <h2 class="text-3xl font-bold">مرحباً بك في منصة دروسي! 📚</h2>
+                        <p class="mt-2">منصتك المتكاملة للمذاكرة، المكتبة الرقمية وأدوات التركيز.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">📄 آخر الملفات المضافة</h3>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            ${recentFiles.map(file => `
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow border">
+                                    <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                                    <p class="font-medium truncate">${file.name}</p>
+                                    <p class="text-xs text-gray-400">${file.date}</p>
+                                    <div class="flex gap-2 mt-2"><button class="text-blue-500 text-sm previewBtn" data-file='${JSON.stringify(file)}'>معاينة</button><button class="text-green-500 text-sm">تحميل</button></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSubjectsGrid() {
+            return `
+                <div>
+                    <h2 class="text-2xl font-bold mb-5">📖 المواد الدراسية</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${subjectsData.map(sub => `
+                            <div class="card-hover cursor-pointer subject-card bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5 transition-all border border-gray-100 dark:border-gray-700" data-subject="${sub.name}">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 ${sub.color} rounded-2xl flex items-center justify-center text-2xl"><i class="${sub.icon}"></i></div>
+                                    <div><h3 class="font-bold text-xl">${sub.name}</h3><p class="text-sm text-gray-500">${sub.filesCount} ملف</p></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLibrary(termFilter = currentTermFilter) {
+            let filtered = [...libraryFiles];
+            if (termFilter !== "all") filtered = filtered.filter(f => f.term == termFilter);
+            return `
+                <div>
+                    <div class="flex justify-between items-center flex-wrap gap-3 mb-5">
+                        <h2 class="text-2xl font-bold">📂 المكتبة الرقمية</h2>
+                        <div class="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === 'all' ? 'bg-blue-500 text-white' : ''}" data-term="all">الكل</button>
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === '1' ? 'bg-blue-500 text-white' : ''}" data-term="1">الترم الأول</button>
+                            <button class="term-filter px-4 py-1 rounded-lg ${termFilter === '2' ? 'bg-blue-500 text-white' : ''}" data-term="2">الترم الثاني</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow">
+                        <table class="min-w-full text-right">
+                            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
+                                <tr><th class="p-3">اسم الملف</th><th>النوع</th><th>الحجم</th><th>التاريخ</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(file => `
+                                    <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="p-3 font-medium">${file.name}</td><td>${file.type}</td><td>${file.size}</td><td>${file.date}</td>
+                                        <td class="flex gap-2"><button class="previewBtn text-blue-500" data-file='${JSON.stringify(file)}'><i class="fas fa-eye"></i> معاينة</button>
+                                        <button class="text-green-500"><i class="fas fa-download"></i> تحميل</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTools() {
+            return `
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow">
+                        <h3 class="text-xl font-bold mb-3"><i class="fas fa-clock"></i> مؤقت بومودورو</h3>
+                        <div class="text-center"><div id="timerDisplay" class="text-5xl font-mono font-bold">25:00</div><div id="timerModeText" class="text-gray-500">💪 وقت المذاكرة</div></div>
+                        <div class="flex justify-center gap-3 mt-4"><button id="startTimerBtn" class="bg-green-500 px-4 py-2 rounded-lg text-white">ابدأ</button><button id="stopTimerBtn" class="bg-yellow-500 px-4 py-2 rounded-lg">إيقاف</button><button id="resetTimerBtn" class="bg-red-500 px-4 py-2 rounded-lg">إعادة</button></div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow">
+                        <h3 class="text-xl font-bold mb-3"><i class="fas fa-tasks"></i> قائمة المهام</h3>
+                        <div class="mb-3 flex gap-2"><input type="text" id="newTaskInput" placeholder="أضف مهمة جديدة..." class="flex-1 p-2 border rounded-lg"><button id="addTaskBtn" class="bg-blue-500 px-4 py-2 rounded-lg text-white">+</button></div>
+                        <div class="mb-2"><div class="w-full bg-gray-200 rounded-full h-2.5"><div id="progressFill" class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width:0%"></div></div><p id="progressPercent" class="text-xs mt-1">0%</p></div>
+                        <div id="tasksList" class="space-y-2 max-h-64 overflow-auto"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderContact() {
+            return `<div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow text-center"><i class="fas fa-envelope-open-text text-6xl text-blue-500 mb-4"></i><h2 class="text-2xl font-bold">تواصل معنا</h2><p>بريد إلكتروني: support@droosy.com | هاتف: 123456789</p><div class="mt-6"><iframe src="https://www.google.com/maps/embed?pb=!1m18" class="w-full h-64 rounded-xl" style="border:0;" allowfullscreen></iframe></div></div>`;
+        }
+
+        function renderCurrentPage(pageId) {
+            const container = document.getElementById("pageContent");
+            if (pageId === "dashboard") container.innerHTML = renderDashboard();
+            else if (pageId === "subjects") container.innerHTML = renderSubjectsGrid();
+            else if (pageId === "library") container.innerHTML = renderLibrary(currentTermFilter);
+            else if (pageId === "tools") container.innerHTML = renderTools();
+            else if (pageId === "contact") container.innerHTML = renderContact();
+            // Re-attach events
+            attachPageEvents();
+        }
+
+        function attachPageEvents() {
+            // preview modals
+            document.querySelectorAll(".previewBtn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const fileData = JSON.parse(btn.dataset.file);
+                    alert(`معاينة: ${fileData.name}\n(الرابط التجريبي: ${fileData.url || "#"})\nتم التكامل مع Firebase لتخزين حقيقي.`);
+                });
+            });
+            // term filters
+            document.querySelectorAll(".term-filter").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const term = btn.dataset.term;
+                    currentTermFilter = term;
+                    renderCurrentPage("library");
+                });
+            });
+            // subject cards navigation
+            document.querySelectorAll(".subject-card").forEach(card => {
+                card.addEventListener("click", () => { renderCurrentPage("library"); });
+            });
+            // pomodoro events
+            const startBtn = document.getElementById("startTimerBtn");
+            const stopBtn = document.getElementById("stopTimerBtn");
+            const resetBtn = document.getElementById("resetTimerBtn");
+            if (startBtn) startBtn.onclick = () => startPomodoro();
+            if (stopBtn) stopBtn.onclick = () => stopPomodoro();
+            if (resetBtn) resetBtn.onclick = () => resetPomodoro();
+            // tasks
+            const addBtn = document.getElementById("addTaskBtn");
+            const taskInput = document.getElementById("newTaskInput");
+            if (addBtn) addBtn.onclick = () => { addTask(taskInput.value); taskInput.value = ""; };
+            updateTasksUI();
+            renderTimerUI();
+        }
+
+        // Global Search
+        document.getElementById("globalSearch")?.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = libraryFiles.filter(f => f.name.toLowerCase().includes(query) || f.subject.toLowerCase().includes(query));
+            if (document.querySelector("#pageContent").innerHTML.includes("المكتبة الرقمية")) {
+                // If library page active, re-render with filter
+                const temp = currentTermFilter;
+                currentTermFilter = "all";
+                renderCurrentPage("library");
+                currentTermFilter = temp;
+                // manual filtering after render
+                setTimeout(() => {
+                    const rows = document.querySelectorAll("table tbody tr");
+                    rows.forEach((row, idx) => {
+                        const fileName = row.cells[0]?.innerText.toLowerCase();
+                        if (fileName && !fileName.includes(query)) row.style.display = "none";
+                        else row.style.display = "";
+                    });
+                }, 10);
+            } else {
+                alert(`نتائج البحث عن "${query}" : ${filtered.length} ملف. انتقل إلى المكتبة لرؤية التفاصيل.`);
+            }
+        });
+
+        // Sidebar & Dark Mode
+        let currentActive = "dashboard";
+        document.querySelectorAll(".nav-link").forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                currentActive = page;
+                renderCurrentPage(page);
+                if (window.innerWidth < 768) document.getElementById("sidebar").classList.remove("open");
+            });
+        });
+        document.getElementById("closeSidebarMobile")?.addEventListener("click", () => document.getElementById("sidebar").classList.remove("open"));
+        const menuToggle = document.createElement("button");
+        menuToggle.innerHTML = '<i class="fas fa-bars text-2xl"></i>';
+        menuToggle.className = "md:hidden fixed bottom-5 left-5 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg";
+        document.body.appendChild(menuToggle);
+        menuToggle.onclick = () => document.getElementById("sidebar").classList.toggle("open");
+
+        // Dark mode
+        const darkToggle = document.getElementById("darkModeToggle");
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+        darkToggle?.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            localStorage.theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+        });
+        
+        // Initial render
+        renderCurrentPage("dashboard");
+    </script>
+</body>
+</html>
